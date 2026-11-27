@@ -13,7 +13,7 @@ class Product extends BaseModel
 
     public function getAll(int $limit = 500, int $offset = 0): array
     {
-        return $this->searchAndFilter([], $limit, $offset);
+        return $this->searchAndFilter(['include_out_of_stock' => true], $limit, $offset);
     }
 
     public function getFeatured(int $limit = 8): array
@@ -23,7 +23,7 @@ class Product extends BaseModel
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
             LEFT JOIN brands b ON p.brand_id = b.id
-            WHERE p.is_featured = 1 AND p.deleted_at IS NULL
+            WHERE p.is_featured = 1 AND p.deleted_at IS NULL AND p.quantity > 0
             ORDER BY p.id DESC
             LIMIT ?
         ");
@@ -39,7 +39,7 @@ class Product extends BaseModel
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
             LEFT JOIN brands b ON p.brand_id = b.id
-            WHERE p.is_hot = 1 AND p.deleted_at IS NULL
+            WHERE p.is_hot = 1 AND p.deleted_at IS NULL AND p.quantity > 0
             ORDER BY p.id DESC
             LIMIT ?
         ");
@@ -111,7 +111,7 @@ class Product extends BaseModel
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
             LEFT JOIN brands b ON p.brand_id = b.id
-            WHERE p.category_id = ? AND p.id != ? AND p.deleted_at IS NULL
+            WHERE p.category_id = ? AND p.id != ? AND p.deleted_at IS NULL AND p.quantity > 0
             ORDER BY p.id DESC
             LIMIT ?
         ");
@@ -132,6 +132,10 @@ class Product extends BaseModel
             WHERE p.deleted_at IS NULL
         ";
         $params = [];
+
+        if (empty($filters['include_out_of_stock'])) {
+            $sql .= " AND p.quantity > 0";
+        }
 
         if (!empty($filters['category_id'])) {
             $sql .= " AND p.category_id = ?";
@@ -217,6 +221,10 @@ class Product extends BaseModel
         ";
         $params = [];
 
+        if (empty($filters['include_out_of_stock'])) {
+            $sql .= " AND p.quantity > 0";
+        }
+
         if (!empty($filters['category_id'])) {
             $sql .= " AND p.category_id = ?";
             $params[] = $filters['category_id'];
@@ -272,7 +280,7 @@ class Product extends BaseModel
             FROM products p
             LEFT JOIN categories c ON p.category_id = c.id
             LEFT JOIN brands b ON p.brand_id = b.id
-            WHERE p.deleted_at IS NULL 
+            WHERE p.deleted_at IS NULL AND p.quantity > 0
               AND (p.name LIKE ? OR p.description LIKE ? OR p.compatible_device LIKE ? OR b.name LIKE ? OR c.name LIKE ?)
             ORDER BY 
                 CASE WHEN p.name LIKE ? THEN 1 ELSE 2 END,

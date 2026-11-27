@@ -1,13 +1,13 @@
 # DỰ ÁN 1: HỆ THỐNG THƯƠNG MẠI ĐIỆN TỬ BÁN ĐIỆN THOẠI & PHỤ KIỆN (NEXVORA)
 
-Website thương mại điện tử chuyên nghiệp, xây dựng theo kiến trúc **Mô hình MVC (Model - View - Controller)** bằng **PHP thuần**, giao diện hiện đại phong cách **Dark Cyberpunk** tối ưu bằng **Tailwind CSS**, tích hợp **Cổng thanh toán tự động SePay Webhook**, **Quét mã VietQR 24/7**, **SSE Real-time Events (Độ trễ mili-giây)**, và hệ thống quản trị chuyên sâu.
+Website thương mại điện tử chuyên nghiệp, xây dựng theo kiến trúc **Mô hình MVC (Model - View - Controller)** bằng **PHP thuần**, giao diện hiện đại phong cách **Dark Cyberpunk** tối ưu bằng **Tailwind CSS**, tích hợp **Cổng thanh toán tự động SePay Webhook**, **Ship COD**, **SSE Real-time Events (Độ trễ mili-giây)**, và hệ thống quản trị chuyên sâu.
 
 ---
 
 ## 🌟 CÁC CÔNG NGHỆ CHÍNH ĐƯỢC TÍCH HỢP
 
 1. **Kiến trúc Backend:** Pure PHP MVC (Không dùng framework nặng nề, phân lớp rõ ràng: Controllers, Models, Views, Services).
-2. **Cơ sở dữ liệu:** MySQL (`DuAn1_db`), cấu trúc gồm **16 bảng nghiệp vụ cốt lõi chuẩn hóa 3NF** (kèm bảng thứ 17 `guest_reservations` phục vụ giữ chỗ nhanh của khách vãng lai), kết nối an toàn bằng PDO Prepared Statements:
+2. **Cơ sở dữ liệu:** MySQL (`DuAn1_db`), cấu trúc gồm **18 bảng nghiệp vụ chuẩn hóa 3NF**, kết nối an toàn bằng PDO Prepared Statements:
    - `categories`: Danh mục sản phẩm (Điện thoại, Phụ kiện, Cáp sạc, Tai nghe...)
    - `brands`: Thương hiệu đối tác (Apple, Samsung, Xiaomi, Sony, Anker...)
    - `users`: Tài khoản người dùng (Phân quyền: `customer`, `admin`)
@@ -18,18 +18,17 @@ Website thương mại điện tử chuyên nghiệp, xây dựng theo kiến tr
    - `product_reviews`: Đánh giá, chấm sao và bình luận của khách hàng
    - `orders`: Đơn hàng (Mã đơn, thông tin nhận hàng, trạng thái, tổng tiền)
    - `order_items`: Chi tiết từng mặt hàng trong đơn (Snapshot giá, số lượng, màu sắc độc lập)
-   - `payments`: Lịch sử giao dịch và đối soát thanh toán (SePay Webhook, VietQR, COD)
+   - `payments`: Lịch sử giao dịch và đối soát thanh toán (SePay Webhook, COD)
    - `warranties`: Quản lý bảo hành điện tử theo số IMEI / Serial sản phẩm
    - `contacts`: Hộp thư liên hệ & yêu cầu hỗ trợ khách hàng
    - `coupons`: Hệ thống mã giảm giá & voucher khuyến mại
    - `wishlists`: Danh sách sản phẩm yêu thích theo từng tài khoản
    - `user_carts`: Giỏ hàng bền vững (Persistent Cart) lưu CSDL theo người dùng
    - `guest_reservations`: Đặt giữ chỗ nhanh dành cho khách vãng lai & quét IP chống ghim hàng
+   - `coupon_usages`: Lịch sử áp dụng mã giảm giá của từng khách hàng (tự động xóa/ẩn voucher sau khi đã dùng)
 3. **Giao diện Frontend:** Tailwind CSS, Font Awesome 6.5, Google Fonts (Inter), SweetAlert2, hiệu ứng Cyberpunk Neon Glow.
 4. **Thanh toán Trực tuyến & Webhook Tự Động (Online Payment):**
    - **Cổng thanh toán SePay:** Webhook IPN tự động khớp mã đơn hàng và số tiền thực tế, cập nhật trạng thái thanh toán theo thời gian thực (Real-time). Tiếp nhận xử lý overpayment (chuyển thừa tiền) tự động ghi nhận hoá đơn và lưu vết số tiền chênh lệch.
-   - **VietQR Napas 247:** Tạo mã QR động chuẩn Napas kèm số tiền và nội dung chuyển khoản tự động.
-   - **Chuyển khoản thủ công:** Hỗ trợ nhập mã giao dịch xác nhận.
    - **Ship COD:** Thanh toán tiền mặt khi nhận hàng với quy trình máy trạng thái giao nhận 1 chiều nghiêm ngặt.
 5. **Cơ chế Real-time SSE (Server-Sent Events) theo Mili-giây:**
    - Kênh SSE tại `index.php?url=api/orders/sse` đẩy thông báo trạng thái đơn hàng tức thì giữa màn hình Admin và Client mà không cần F5 lại trang.
@@ -94,7 +93,7 @@ Website thương mại điện tử chuyên nghiệp, xây dựng theo kiến tr
 1. Mở trình duyệt web truy cập: [http://localhost/phpmyadmin](http://localhost/phpmyadmin)
 2. Nhấn vào tab **Import** (Nhập).
 3. Chọn tệp SQL:
-   - `sql/database.sql`: Cấu trúc chuẩn 16 bảng nghiệp vụ cốt lõi (kèm bảng 17 `guest_reservations`) và dữ liệu mẫu thực tế.
+   - `sql/database.sql`: Cấu trúc chuẩn 18 bảng nghiệp vụ CSDL và dữ liệu mẫu thực tế.
 4. Bấm nút **Import** ở cuối trang để tự động tạo cơ sở dữ liệu `DuAn1_db`.
 
 ### Bước 3: Cấu Hình Biến Môi Trường (.env)
