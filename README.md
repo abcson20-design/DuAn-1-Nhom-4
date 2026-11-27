@@ -7,7 +7,7 @@ Website thương mại điện tử chuyên nghiệp, xây dựng theo kiến tr
 ## 🌟 CÁC CÔNG NGHỆ CHÍNH ĐƯỢC TÍCH HỢP
 
 1. **Kiến trúc Backend:** Pure PHP MVC (Không dùng framework nặng nề, phân lớp rõ ràng: Controllers, Models, Views, Services).
-2. **Cơ sở dữ liệu:** MySQL (`DuAn1_db`), cấu trúc gồm **16 bảng nghiệp vụ cốt lõi chuẩn hóa 3NF** (kèm bảng thứ 17 `guest_reservations` phục vụ giữ chỗ nhanh của khách vãng lai), kết nối an toàn bằng PDO Prepared Statements:
+2. **Cơ sở dữ liệu:** MySQL (`DuAn1_db`), cấu trúc gồm **18 bảng nghiệp vụ chuẩn hóa 3NF**, kết nối an toàn bằng PDO Prepared Statements:
    - `categories`: Danh mục sản phẩm (Điện thoại, Phụ kiện, Cáp sạc, Tai nghe...)
    - `brands`: Thương hiệu đối tác (Apple, Samsung, Xiaomi, Sony, Anker...)
    - `users`: Tài khoản người dùng (Phân quyền: `customer`, `admin`)
@@ -25,6 +25,7 @@ Website thương mại điện tử chuyên nghiệp, xây dựng theo kiến tr
    - `wishlists`: Danh sách sản phẩm yêu thích theo từng tài khoản
    - `user_carts`: Giỏ hàng bền vững (Persistent Cart) lưu CSDL theo người dùng
    - `guest_reservations`: Đặt giữ chỗ nhanh dành cho khách vãng lai & quét IP chống ghim hàng
+   - `coupon_usages`: Lịch sử áp dụng mã giảm giá của từng khách hàng (tự động xóa/ẩn voucher sau khi đã dùng)
 3. **Giao diện Frontend:** Tailwind CSS, Font Awesome 6.5, Google Fonts (Inter), SweetAlert2, hiệu ứng Cyberpunk Neon Glow.
 4. **Thanh toán Trực tuyến & Webhook Tự Động (Online Payment):**
    - **Cổng thanh toán SePay:** Webhook IPN tự động khớp mã đơn hàng và số tiền thực tế, cập nhật trạng thái thanh toán theo thời gian thực (Real-time). Tiếp nhận xử lý overpayment (chuyển thừa tiền) tự động ghi nhận hoá đơn và lưu vết số tiền chênh lệch.
@@ -94,7 +95,7 @@ Website thương mại điện tử chuyên nghiệp, xây dựng theo kiến tr
 1. Mở trình duyệt web truy cập: [http://localhost/phpmyadmin](http://localhost/phpmyadmin)
 2. Nhấn vào tab **Import** (Nhập).
 3. Chọn tệp SQL:
-   - `sql/database.sql`: Cấu trúc chuẩn 16 bảng nghiệp vụ cốt lõi (kèm bảng 17 `guest_reservations`) và dữ liệu mẫu thực tế.
+   - `sql/database.sql`: Cấu trúc chuẩn 18 bảng nghiệp vụ CSDL và dữ liệu mẫu thực tế.
 4. Bấm nút **Import** ở cuối trang để tự động tạo cơ sở dữ liệu `DuAn1_db`.
 
 ### Bước 3: Cấu Hình Biến Môi Trường (.env)
