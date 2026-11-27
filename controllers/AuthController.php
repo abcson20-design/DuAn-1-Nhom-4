@@ -1,4 +1,9 @@
 <?php
+/**
+ * PHẦN NGHIỆP VỤ: XÁC THỰC TÀI KHOẢN, PHÂN QUYỀN & QUẢN TRỊ USER
+ * Thành viên phụ trách: Lê Văn Sơn (Trưởng nhóm)
+ * Dự án 1 - Nhóm 4: Hệ thống bán lẻ điện thoại Nexvora Phone Store
+ */
 require_once __DIR__ . '/BaseController.php';
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../models/Order.php';
