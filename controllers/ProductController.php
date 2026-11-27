@@ -157,6 +157,12 @@ class ProductController extends BaseController {
             $this->redirect(BASE_URL . 'index.php?url=products');
         }
 
+        // Tự động ẩn sản phẩm nếu hết hàng đối với khách hàng (Admin vẫn có thể xem trước)
+        if ((int)($product['quantity'] ?? 0) <= 0 && empty($_SESSION['admin_user'])) {
+            $_SESSION['flash_error'] = 'Sản phẩm này hiện đã hết hàng hoặc tạm ngưng kinh doanh!';
+            $this->redirect(BASE_URL . 'index.php?url=products');
+        }
+
         // Tăng lượt xem
         $productModel->incrementViews($product['id']);
 
