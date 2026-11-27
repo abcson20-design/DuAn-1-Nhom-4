@@ -141,7 +141,7 @@
     <?php else: ?>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <?php foreach ($products as $prod): ?>
-                <div class="glass-card rounded-2xl overflow-hidden hover:-translate-y-2 hover:border-primary-500/50 hover:shadow-2xl hover:shadow-primary-500/10 transition duration-300 flex flex-col justify-between">
+                <div class="glass-card rounded-2xl overflow-hidden hover:-translate-y-2 hover:border-primary-500/50 hover:shadow-2xl hover:shadow-primary-500/10 transition duration-300 flex flex-col justify-between" data-product-card data-product-id="<?= (int)$prod['id'] ?>" data-product-name="<?= htmlspecialchars($prod['name']) ?>">
                     <div class="product-thumb-box relative bg-slate-950/60 p-6 flex items-center justify-center cursor-pointer group/thumb select-none overflow-hidden rounded-t-2xl">
                         <?php $isW = !empty($userWishlistIds) && in_array($prod['id'], $userWishlistIds); ?>
                         <!-- Nút Thêm vào Danh sách yêu thích -->

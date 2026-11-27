@@ -958,7 +958,7 @@ if (!empty($customGallery) && is_array($customGallery)) {
 
             <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
                 <?php foreach ($relatedProducts as $rel): ?>
-                    <div class="glass-card rounded-2xl p-4 flex flex-col justify-between group hover:border-cyan-500/50 transition duration-300 relative">
+                    <div class="glass-card rounded-2xl p-4 flex flex-col justify-between group hover:border-cyan-500/50 transition duration-300 relative" data-product-card data-product-id="<?= (int)$rel['id'] ?>" data-product-name="<?= htmlspecialchars($rel['name']) ?>">
                         <?php $isRelW = !empty($userWishlistIds) && in_array($rel['id'], $userWishlistIds); ?>
                         <button type="button" 
                                 onclick="toggleWishlist(<?= $rel['id'] ?>, this, event)" 
@@ -1432,11 +1432,49 @@ function toggleDetailWishlist(productId) {
 // REAL-TIME BIẾN THỂ: TỰ ĐỘNG CẬP NHẬT KHI ADMIN THÊM / ĐỔI BIẾN THỂ MÀU SẮC
 // =========================================================================
 let currentColorsCount = <?= count($productColors) ?>;
+let isDetailOutOfStockNotified = false;
 setInterval(async () => {
     try {
         const res = await fetch(`<?= BASE_URL ?>index.php?url=api/products/variants&product_id=<?= (int)$product['id'] ?>`);
         if (!res.ok) return;
         const data = await res.json();
+
+        // 1. Kiểm tra tồn kho Real-time: Nếu sản phẩm vừa hết hàng (quantity <= 0)
+        if (data.success && data.quantity !== undefined && parseInt(data.quantity) <= 0) {
+            if (!isDetailOutOfStockNotified) {
+                isDetailOutOfStockNotified = true;
+
+                // Vô hiệu hóa nút Mua Ngay & Thêm Vào Giỏ
+                const form = document.getElementById('productActionForm');
+                if (form) {
+                    const actionBtns = form.querySelectorAll('button[type="submit"], button[type="button"]');
+                    actionBtns.forEach(b => {
+                        b.disabled = true;
+                        b.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+                        b.innerHTML = '<i class="fa-solid fa-ban mr-1.5"></i> Đã hết hàng';
+                    });
+                }
+
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: '⚡ Sản phẩm vừa hết hàng!',
+                        html: '<div class="text-xs text-slate-300 space-y-1"><p>Sản phẩm này hiện vừa được mua hết hoặc tạm hết trong kho.</p><p class="text-cyan-400 font-bold">Hệ thống sẽ chuyển bạn về trang sản phẩm sau 3 giây.</p></div>',
+                        confirmButtonText: 'Xem sản phẩm khác',
+                        confirmButtonColor: '#06b6d4',
+                        background: '#0f172a',
+                        color: '#f8fafc',
+                        timer: 3500,
+                        timerProgressBar: true
+                    }).then(() => {
+                        window.location.href = '<?= BASE_URL ?>index.php?url=products';
+                    });
+                }
+            }
+            return;
+        }
+
+        // 2. Kiểm tra biến thể màu sắc
         if (data.success && Array.isArray(data.colors)) {
             if (data.colors.length !== currentColorsCount) {
                 currentColorsCount = data.colors.length;
@@ -1454,5 +1492,5 @@ setInterval(async () => {
             }
         }
     } catch (e) {}
-}, 3000);
+}, 2500);
 </script>

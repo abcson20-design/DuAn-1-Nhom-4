@@ -41,6 +41,25 @@ class CheckoutController extends BaseController {
         if (empty($cart)) {
             $_SESSION['cart_error'] = 'Vui lòng chọn ít nhất 1 sản phẩm trong giỏ hàng để tiến hành thanh toán!';
             $this->redirect(BASE_URL . 'index.php?url=cart');
+            return;
+        }
+
+        // Chặn tạo đơn hàng nếu có sản phẩm hết hàng
+        foreach ($cart as $item) {
+            if (!empty($item['is_out_of_stock']) || (int)($item['quantity'] ?? 0) <= 0) {
+                $_SESSION['cart_error'] = 'Sản phẩm "' . htmlspecialchars($item['name']) . '" trong giỏ hàng hiện đã hết hàng. Vui lòng bỏ chọn hoặc xóa trước khi đặt hàng!';
+                $this->redirect(BASE_URL . 'index.php?url=cart');
+                return;
+            }
+        }
+
+        // Chặn thanh toán nếu có bất kỳ sản phẩm nào bị hết hàng
+        foreach ($cart as $item) {
+            if (!empty($item['is_out_of_stock']) || (int)($item['quantity'] ?? 0) <= 0) {
+                $_SESSION['cart_error'] = 'Sản phẩm "' . htmlspecialchars($item['name']) . '" trong giỏ hàng hiện đã hết hàng. Vui lòng bỏ chọn hoặc xóa sản phẩm này trước khi thanh toán!';
+                $this->redirect(BASE_URL . 'index.php?url=cart');
+                return;
+            }
         }
 
         $subtotal = 0;
@@ -266,6 +285,15 @@ class CheckoutController extends BaseController {
             $_SESSION['cart_error'] = 'Vui lòng chọn ít nhất 1 sản phẩm trong giỏ hàng để tiến hành thanh toán!';
             $this->redirect(BASE_URL . 'index.php?url=cart');
             return;
+        }
+
+        // Chặn tạo đơn hàng nếu có sản phẩm hết hàng
+        foreach ($cart as $item) {
+            if (!empty($item['is_out_of_stock']) || (int)($item['quantity'] ?? 0) <= 0) {
+                $_SESSION['cart_error'] = 'Sản phẩm "' . htmlspecialchars($item['name']) . '" trong giỏ hàng hiện đã hết hàng. Vui lòng bỏ chọn hoặc xóa trước khi đặt hàng!';
+                $this->redirect(BASE_URL . 'index.php?url=cart');
+                return;
+            }
         }
 
         $name = trim($_POST['customer_name'] ?? '');

@@ -99,30 +99,35 @@
                         <?php 
                         $allChecked = true;
                         foreach ($cart as $key => $item): 
-                            $isSelected = !isset($item['selected']) || !empty($item['selected']);
-                            if (!$isSelected) {
+                            $isOutOfStock = !empty($item['is_out_of_stock']);
+                            $isSelected = empty($isOutOfStock) && (!isset($item['selected']) || !empty($item['selected']));
+                            if (!$isSelected && !$isOutOfStock) {
                                 $allChecked = false;
                             }
                             $itemTotal = (float)$item['price'] * (int)$item['quantity'];
                         ?>
-                            <tr class="hover:bg-slate-900/50 transition <?= $isSelected ? 'bg-cyan-950/10' : '' ?>" id="cart-row-<?= htmlspecialchars((string)$key) ?>">
+                            <tr class="hover:bg-slate-900/50 transition <?= $isOutOfStock ? 'cart-row-out-of-stock opacity-60 bg-rose-950/20 border-l-2 border-rose-500' : ($isSelected ? 'bg-cyan-950/10' : '') ?>" id="cart-row-<?= htmlspecialchars((string)$key) ?>" data-cart-key="<?= htmlspecialchars((string)$key) ?>">
                                 <!-- Checkbox chọn món -->
                                 <td class="py-4 px-4 sm:px-6 text-center">
-                                    <input type="checkbox" 
-                                           class="cart-item-checkbox w-4 h-4 rounded border-slate-700 bg-slate-900 text-cyan-500 focus:ring-cyan-500 transition cursor-pointer" 
-                                           data-key="<?= htmlspecialchars((string)$key) ?>" 
-                                           <?= $isSelected ? 'checked' : '' ?>
-                                           onchange="cartToggleSelectItem('<?= htmlspecialchars((string)$key) ?>', this.checked)">
+                                    <?php if ($isOutOfStock): ?>
+                                        <input type="checkbox" disabled class="w-4 h-4 rounded border-slate-800 bg-slate-950 text-slate-600 opacity-30 cursor-not-allowed" title="Sản phẩm đã hết hàng, không thể chọn thanh toán">
+                                    <?php else: ?>
+                                        <input type="checkbox" 
+                                               class="cart-item-checkbox w-4 h-4 rounded border-slate-700 bg-slate-900 text-cyan-500 focus:ring-cyan-500 transition cursor-pointer" 
+                                               data-key="<?= htmlspecialchars((string)$key) ?>" 
+                                               <?= $isSelected ? 'checked' : '' ?>
+                                               onchange="cartToggleSelectItem('<?= htmlspecialchars((string)$key) ?>', this.checked)">
+                                    <?php endif; ?>
                                 </td>
 
                                 <!-- Chi tiết sản phẩm -->
                                 <td class="py-4 px-2">
                                     <div class="flex items-center space-x-3.5">
                                         <a href="<?= BASE_URL ?>index.php?url=products/detail&slug=<?= urlencode($item['slug']) ?>">
-                                            <img src="<?= htmlspecialchars($item['image']) ?>" alt="" class="w-16 h-16 object-contain rounded-2xl bg-slate-950 p-1.5 border border-slate-800 hover:border-cyan-500 transition">
+                                            <img src="<?= htmlspecialchars($item['image']) ?>" alt="" class="w-16 h-16 object-contain rounded-2xl bg-slate-950 p-1.5 border border-slate-800 hover:border-cyan-500 transition <?= $isOutOfStock ? 'grayscale opacity-75' : '' ?>">
                                         </a>
                                         <div>
-                                            <a href="<?= BASE_URL ?>index.php?url=products/detail&slug=<?= urlencode($item['slug']) ?>" class="font-bold text-slate-200 hover:text-cyan-400 transition line-clamp-1 text-sm">
+                                            <a href="<?= BASE_URL ?>index.php?url=products/detail&slug=<?= urlencode($item['slug']) ?>" class="font-bold text-slate-200 hover:text-cyan-400 transition line-clamp-1 text-sm <?= $isOutOfStock ? 'line-through text-slate-400' : '' ?>">
                                                 <?= htmlspecialchars($item['name']) ?>
                                             </a>
                                             <div class="flex flex-wrap items-center gap-2 mt-1">
@@ -134,7 +139,18 @@
                                                         Phân loại: <?= htmlspecialchars($item['color']) ?>
                                                     </span>
                                                 <?php endif; ?>
+                                                <?php if ($isOutOfStock): ?>
+                                                    <span class="badge-out-of-stock inline-flex items-center gap-1.5 text-[11px] font-bold text-rose-400 bg-rose-950/80 border border-rose-800/80 px-2 py-0.5 rounded-md">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> Hết hàng
+                                                    </span>
+                                                <?php endif; ?>
                                             </div>
+                                            <?php if ($isOutOfStock): ?>
+                                                <p class="text-[11px] text-rose-400/90 italic mt-1 flex items-center gap-1">
+                                                    <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
+                                                    Sản phẩm này hiện đã hết hàng, vui lòng xóa để tiếp tục thanh toán
+                                                </p>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </td>
@@ -146,24 +162,28 @@
 
                                 <!-- Tăng giảm số lượng Shopee AJAX -->
                                 <td class="py-4 px-4 text-center">
-                                    <div class="inline-flex items-center border border-slate-700 rounded-xl bg-slate-950 overflow-hidden shadow-sm">
-                                        <button type="button" 
-                                                onclick="cartChangeQty('<?= htmlspecialchars((string)$key) ?>', 'decrease')" 
-                                                class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition active:scale-95">
-                                            <i class="fa-solid fa-minus text-[10px]"></i>
-                                        </button>
-                                        <input type="number" 
-                                               id="qty-input-<?= htmlspecialchars((string)$key) ?>"
-                                               value="<?= (int)$item['quantity'] ?>" 
-                                               min="1" max="10" 
-                                               class="w-12 text-center text-xs font-bold bg-transparent text-white border-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                               onchange="cartSetQty('<?= htmlspecialchars((string)$key) ?>', this.value)">
-                                        <button type="button" 
-                                                onclick="cartChangeQty('<?= htmlspecialchars((string)$key) ?>', 'increase')" 
-                                                class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition active:scale-95">
-                                            <i class="fa-solid fa-plus text-[10px]"></i>
-                                        </button>
-                                    </div>
+                                    <?php if ($isOutOfStock): ?>
+                                        <span class="text-xs text-rose-400 font-bold italic bg-rose-950/40 border border-rose-800/40 px-2 py-1 rounded-lg">Tạm ngưng</span>
+                                    <?php else: ?>
+                                        <div class="inline-flex items-center border border-slate-700 rounded-xl bg-slate-950 overflow-hidden shadow-sm">
+                                            <button type="button" 
+                                                    onclick="cartChangeQty('<?= htmlspecialchars((string)$key) ?>', 'decrease')" 
+                                                    class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition active:scale-95">
+                                                <i class="fa-solid fa-minus text-[10px]"></i>
+                                            </button>
+                                            <input type="number" 
+                                                   id="qty-input-<?= htmlspecialchars((string)$key) ?>"
+                                                   value="<?= (int)$item['quantity'] ?>" 
+                                                   min="1" max="10" 
+                                                   class="w-12 text-center text-xs font-bold bg-transparent text-white border-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                   onchange="cartSetQty('<?= htmlspecialchars((string)$key) ?>', this.value)">
+                                            <button type="button" 
+                                                    onclick="cartChangeQty('<?= htmlspecialchars((string)$key) ?>', 'increase')" 
+                                                    class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition active:scale-95">
+                                                <i class="fa-solid fa-plus text-[10px]"></i>
+                                            </button>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
 
                                 <!-- Tạm tính từng dòng -->
@@ -754,4 +774,73 @@ function updateCartUI(data) {
     if (headerCb) headerCb.checked = data.all_selected;
     if (bottomCb) bottomCb.checked = data.all_selected;
 }
+
+// =========================================================================
+// REAL-TIME GIỎ HÀNG: TỰ ĐỘNG BÁO HẾT HÀNG & BỎ CHỌN TỨC THÌ (MỖI 2.5 GIÂY)
+// =========================================================================
+setInterval(async () => {
+    try {
+        const res = await fetch('<?= BASE_URL ?>index.php?url=api/cart/check-stock');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (data.success && data.has_out_of_stock && Array.isArray(data.out_of_stock_details)) {
+            let newlyOutOfStock = false;
+
+            data.out_of_stock_details.forEach(item => {
+                const row = document.getElementById(`cart-row-${item.key}`);
+                if (row && !row.classList.contains('cart-row-out-of-stock')) {
+                    newlyOutOfStock = true;
+                    row.classList.add('cart-row-out-of-stock', 'opacity-60', 'bg-rose-950/20', 'border-l-2', 'border-rose-500');
+
+                    // Vô hiệu hóa và bỏ chọn Checkbox
+                    const cb = row.querySelector('.cart-item-checkbox');
+                    if (cb) {
+                        cb.checked = false;
+                        cb.disabled = true;
+                        cb.classList.add('opacity-30', 'cursor-not-allowed');
+                    }
+
+                    // Chèn huy hiệu Hết hàng nếu chưa có
+                    if (!row.querySelector('.badge-out-of-stock')) {
+                        const titleLink = row.querySelector('a.line-clamp-1');
+                        if (titleLink) {
+                            titleLink.classList.add('line-through', 'text-slate-400');
+                            const badgeWrap = document.createElement('div');
+                            badgeWrap.className = 'mt-1.5 flex items-center gap-1.5';
+                            badgeWrap.innerHTML = `
+                                <span class="badge-out-of-stock inline-flex items-center gap-1.5 text-[11px] font-bold text-rose-400 bg-rose-950/80 border border-rose-800/80 px-2 py-0.5 rounded-md">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> Hết hàng
+                                </span>
+                                <span class="text-[10px] text-rose-300 italic">Vui lòng xóa sản phẩm này để thanh toán</span>
+                            `;
+                            titleLink.parentNode.appendChild(badgeWrap);
+                        }
+                    }
+
+                    // Vô hiệu hóa nút tăng giảm số lượng
+                    const qtyBox = row.querySelector('.inline-flex.border.border-slate-700');
+                    if (qtyBox) {
+                        qtyBox.outerHTML = '<span class="text-xs text-rose-400 font-bold italic bg-rose-950/40 border border-rose-800/40 px-2 py-1 rounded-lg">Tạm ngưng</span>';
+                    }
+                }
+            });
+
+            if (newlyOutOfStock) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: '⚡ Cảnh báo hết hàng!',
+                        html: '<div class="text-xs text-slate-300 space-y-1"><p>Một số sản phẩm trong giỏ hàng của bạn vừa hết hàng trong kho.</p><p class="text-rose-400 font-bold">Hệ thống đã tự động đánh dấu [Hết hàng] và hủy chọn.</p></div>',
+                        confirmButtonText: 'Đã hiểu',
+                        confirmButtonColor: '#e11d48',
+                        background: '#0f172a',
+                        color: '#f8fafc'
+                    });
+                }
+                setTimeout(() => location.reload(), 2000);
+            }
+        }
+    } catch (err) {}
+}, 2500);
 </script>

@@ -129,5 +129,84 @@
     <script src="<?= BASE_URL ?>public/js/main.js?v=<?= @filemtime(__DIR__ . '/../../public/js/main.js') ?: time() ?>"></script>
     <!-- Universal Real-time Form Validator (Thông báo lỗi đỏ tức thì bên dưới ô nhập) -->
     <script src="<?= BASE_URL ?>public/js/form-validator.js?v=<?= @filemtime(__DIR__ . '/../../public/js/form-validator.js') ?: time() ?>"></script>
+
+    <!-- Real-time Tự động ẩn sản phẩm hết hàng tức thì trên mọi trang hiển thị -->
+    <script>
+    (function() {
+        function initRealtimeStockMonitor() {
+            const getCards = () => document.querySelectorAll('[data-product-card][data-product-id]');
+            if (!getCards().length) return;
+
+            async function checkVisibleStock() {
+                const currentCards = getCards();
+                if (!currentCards.length) return;
+
+                const idMap = new Map();
+                currentCards.forEach(card => {
+                    const pid = card.getAttribute('data-product-id');
+                    if (pid) {
+                        if (!idMap.has(pid)) idMap.set(pid, []);
+                        idMap.get(pid).push(card);
+                    }
+                });
+
+                const ids = Array.from(idMap.keys()).join(',');
+                if (!ids) return;
+
+                try {
+                    const res = await fetch('<?= BASE_URL ?>index.php?url=api/products/check-stock&ids=' + encodeURIComponent(ids));
+                    if (!res.ok) return;
+                    const data = await res.json();
+
+                    if (data.success && Array.isArray(data.out_of_stock_ids) && data.out_of_stock_ids.length > 0) {
+                        data.out_of_stock_ids.forEach(outId => {
+                            const outIdStr = String(outId);
+                            const cardsToRemove = idMap.get(outIdStr) || [];
+                            cardsToRemove.forEach(card => {
+                                if (!card.classList.contains('is-out-of-stock-hidden')) {
+                                    card.classList.add('is-out-of-stock-hidden');
+                                    const prodName = card.getAttribute('data-product-name') || 'Sản phẩm';
+
+                                    // Hiệu ứng biến mất mượt mà (Fade Out & Scale Down)
+                                    card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                                    card.style.opacity = '0';
+                                    card.style.transform = 'scale(0.85)';
+                                    card.style.pointerEvents = 'none';
+
+                                    setTimeout(() => {
+                                        card.remove();
+                                    }, 600);
+
+                                    if (typeof Swal !== 'undefined') {
+                                        Swal.fire({
+                                            toast: true,
+                                            position: 'top-end',
+                                            icon: 'warning',
+                                            title: '⚡ Hết hàng tức thì!',
+                                            text: `"${prodName}" vừa hết hàng và đã được tự động ẩn.`,
+                                            showConfirmButton: false,
+                                            timer: 3500,
+                                            background: '#0f172a',
+                                            color: '#f8fafc'
+                                        });
+                                    }
+                                }
+                            });
+                        });
+                    }
+                } catch (err) {}
+            }
+
+            // Kiểm tra định kỳ mỗi 2.5 giây
+            setInterval(checkVisibleStock, 2500);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initRealtimeStockMonitor);
+        } else {
+            initRealtimeStockMonitor();
+        }
+    })();
+    </script>
 </body>
 </html>

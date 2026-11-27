@@ -237,7 +237,7 @@
                 <!-- Grid Sản Phẩm -->
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                     <?php foreach ($products as $p): ?>
-                        <div class="glass-card rounded-2xl overflow-hidden border border-slate-700/80 hover:border-cyan-500/50 hover:shadow-2xl hover:shadow-cyan-500/10 transition duration-300 flex flex-col group">
+                        <div class="glass-card rounded-2xl overflow-hidden border border-slate-700/80 hover:border-cyan-500/50 hover:shadow-2xl hover:shadow-cyan-500/10 transition duration-300 flex flex-col group" data-product-card data-product-id="<?= (int)$p['id'] ?>" data-product-name="<?= htmlspecialchars($p['name']) ?>">
                             <!-- Ảnh Sản Phẩm -->
                             <div class="product-thumb-box relative pt-[85%] bg-slate-900/60 overflow-hidden cursor-pointer group/thumb select-none">
                                 <?php $isW = !empty($userWishlistIds) && in_array($p['id'], $userWishlistIds); ?>

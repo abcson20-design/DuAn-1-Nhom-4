@@ -101,6 +101,9 @@ class ApiController extends BaseController
             case 'hold':
                 $this->cartGuestHold();
                 break;
+            case 'check-stock':
+                $this->cartCheckStock();
+                break;
             default:
                 $this->json(['success' => false, 'message' => 'Hành động giỏ hàng không hợp lệ'], 400);
         }
@@ -1118,9 +1121,142 @@ class ApiController extends BaseController
             case 'variants':
                 $this->productVariants();
                 break;
+            case 'check-stock':
+                $this->productCheckStock();
+                break;
             default:
                 $this->json(['success' => false, 'message' => 'Hành động sản phẩm không hợp lệ'], 400);
         }
+    }
+
+    private function productCheckStock(): void
+    {
+        $rawIds = trim((string)($_GET['ids'] ?? ''));
+        if ($rawIds === '') {
+            $this->json(['success' => true, 'out_of_stock_ids' => [], 'out_of_stock_items' => []]);
+            return;
+        }
+
+        $idList = array_values(array_unique(array_filter(array_map('intval', explode(',', $rawIds)), fn($id) => $id > 0)));
+        if (empty($idList)) {
+            $this->json(['success' => true, 'out_of_stock_ids' => [], 'out_of_stock_items' => []]);
+            return;
+        }
+
+        $idList = array_slice($idList, 0, 100);
+        $placeholders = implode(',', array_fill(0, count($idList), '?'));
+
+        $productModel = new Product();
+        $db = $productModel->getDb();
+
+        $stmt = $db->prepare("SELECT id, name, quantity, deleted_at FROM products WHERE id IN ($placeholders)");
+        $stmt->execute($idList);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $outOfStock = [];
+        $foundIds = [];
+
+        foreach ($rows as $row) {
+            $foundIds[] = (int)$row['id'];
+            if ((int)$row['quantity'] <= 0 || !empty($row['deleted_at'])) {
+                $outOfStock[] = [
+                    'id' => (int)$row['id'],
+                    'name' => $row['name'],
+                    'quantity' => (int)$row['quantity']
+                ];
+            }
+        }
+
+        foreach ($idList as $reqId) {
+            if (!in_array($reqId, $foundIds, true)) {
+                $outOfStock[] = [
+                    'id' => $reqId,
+                    'name' => 'Sản phẩm',
+                    'quantity' => 0
+                ];
+            }
+        }
+
+        $this->json([
+            'success' => true,
+            'out_of_stock_ids' => array_column($outOfStock, 'id'),
+            'out_of_stock_items' => $outOfStock
+        ]);
+    }
+
+    private function cartCheckStock(): void
+    {
+        $cart = $_SESSION['cart'] ?? [];
+        if (empty($cart)) {
+            $this->json(['success' => true, 'has_out_of_stock' => false, 'out_of_stock_keys' => [], 'out_of_stock_details' => []]);
+            return;
+        }
+
+        $productModel = new Product();
+        $db = $productModel->getDb();
+
+        $productIds = array_unique(array_filter(array_map(fn($item) => (int)($item['id'] ?? 0), $cart)));
+        if (empty($productIds)) {
+            $this->json(['success' => true, 'has_out_of_stock' => false, 'out_of_stock_keys' => [], 'out_of_stock_details' => []]);
+            return;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($productIds), '?'));
+        $stmt = $db->prepare("SELECT id, name, quantity, deleted_at FROM products WHERE id IN ($placeholders)");
+        $stmt->execute(array_values($productIds));
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $productStocks = [];
+        foreach ($rows as $r) {
+            $productStocks[(int)$r['id']] = [
+                'quantity' => (int)$r['quantity'],
+                'deleted_at' => $r['deleted_at'],
+                'name' => $r['name']
+            ];
+        }
+
+        $outOfStockKeys = [];
+        $outOfStockDetails = [];
+        $changed = false;
+
+        foreach ($cart as $key => $item) {
+            $pid = (int)($item['id'] ?? 0);
+            $stockInfo = $productStocks[$pid] ?? null;
+            $isOutOfStock = !$stockInfo || $stockInfo['deleted_at'] !== null || $stockInfo['quantity'] <= 0;
+
+            if ($isOutOfStock) {
+                $outOfStockKeys[] = (string)$key;
+                $outOfStockDetails[] = [
+                    'key' => (string)$key,
+                    'product_id' => $pid,
+                    'name' => $item['name'] ?? ($stockInfo['name'] ?? 'Sản phẩm'),
+                    'current_stock' => $stockInfo['quantity'] ?? 0
+                ];
+                if (!isset($_SESSION['cart'][$key]['is_out_of_stock']) || !$_SESSION['cart'][$key]['is_out_of_stock'] || !empty($_SESSION['cart'][$key]['selected'])) {
+                    $_SESSION['cart'][$key]['is_out_of_stock'] = true;
+                    $_SESSION['cart'][$key]['selected'] = false; // Bỏ chọn để chặn thanh toán
+                    $changed = true;
+                }
+            } else {
+                if (!empty($_SESSION['cart'][$key]['is_out_of_stock'])) {
+                    unset($_SESSION['cart'][$key]['is_out_of_stock']);
+                    $changed = true;
+                }
+            }
+        }
+
+        if ($changed && !empty($_SESSION['user']['id'])) {
+            require_once __DIR__ . '/../models/Cart.php';
+            $cModel = new Cart();
+            $cModel->saveCart((int)$_SESSION['user']['id'], $_SESSION['cart']);
+        }
+
+        $this->json([
+            'success' => true,
+            'has_out_of_stock' => !empty($outOfStockKeys),
+            'out_of_stock_keys' => $outOfStockKeys,
+            'out_of_stock_details' => $outOfStockDetails
+        ]);
     }
 
     private function productVariants(): void

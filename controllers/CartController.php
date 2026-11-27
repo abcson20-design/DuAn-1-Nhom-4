@@ -104,10 +104,19 @@ class CartController extends BaseController {
                 $updated = true;
             }
 
-            // Giới hạn số lượng theo tồn kho thực tế
-            if ((int)$item['quantity'] > (int)$prod['quantity']) {
-                $item['quantity'] = max(1, (int)$prod['quantity']);
+            // Đánh dấu sản phẩm hết hàng hoặc cập nhật theo tồn kho thực tế
+            if ((int)$prod['quantity'] <= 0) {
+                $item['is_out_of_stock'] = true;
+                $item['stock'] = 0;
+                $item['selected'] = false; // Tự động bỏ chọn để không thể thanh toán
                 $updated = true;
+            } else {
+                $item['is_out_of_stock'] = false;
+                $item['stock'] = (int)$prod['quantity'];
+                if ((int)$item['quantity'] > (int)$prod['quantity']) {
+                    $item['quantity'] = (int)$prod['quantity'];
+                    $updated = true;
+                }
             }
         }
         unset($item);
@@ -138,13 +147,16 @@ class CartController extends BaseController {
         $selectedCount = 0;
 
         foreach ($cart as $key => &$item) {
-            if (!isset($item['selected'])) {
+            if (!empty($item['is_out_of_stock'])) {
+                $item['selected'] = false;
+                $_SESSION['cart'][$key]['selected'] = false;
+            } elseif (!isset($item['selected'])) {
                 $item['selected'] = true;
                 $_SESSION['cart'][$key]['selected'] = true;
             }
             $itemTotal = (float)$item['price'] * (int)$item['quantity'];
             $subtotal += $itemTotal;
-            if (!empty($item['selected'])) {
+            if (!empty($item['selected']) && empty($item['is_out_of_stock'])) {
                 $selectedSubtotal += $itemTotal;
                 $selectedCount += (int)$item['quantity'];
             }
