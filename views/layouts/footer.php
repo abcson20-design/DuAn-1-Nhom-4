@@ -125,10 +125,17 @@
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        window.NEXVORA_BASE_URL = '<?= BASE_URL ?>';
+        window.NEXVORA_IS_ADMIN = false;
+        window.NEXVORA_CURRENT_USER_ID = <?= !empty($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : 'null' ?>;
+    </script>
     <!-- Custom Main JS (có tham số chống cache trình duyệt) -->
     <script src="<?= BASE_URL ?>public/js/main.js?v=<?= @filemtime(__DIR__ . '/../../public/js/main.js') ?: time() ?>"></script>
     <!-- Universal Real-time Form Validator (Thông báo lỗi đỏ tức thì bên dưới ô nhập) -->
     <script src="<?= BASE_URL ?>public/js/form-validator.js?v=<?= @filemtime(__DIR__ . '/../../public/js/form-validator.js') ?: time() ?>"></script>
+    <!-- NEXVORA Real-time Engine (Cập nhật tức thì mọi thay đổi mà không cần load lại trang) -->
+    <script src="<?= BASE_URL ?>public/js/nexvora-realtime.js?v=<?= @filemtime(__DIR__ . '/../../public/js/nexvora-realtime.js') ?: time() ?>"></script>
 
     <!-- Real-time Tự động ẩn sản phẩm hết hàng tức thì trên mọi trang hiển thị -->
     <script>

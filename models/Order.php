@@ -267,6 +267,30 @@ class Order extends BaseModel {
             }
 
             $this->db->commit();
+
+            // Phát sự kiện Real-time: Khách hàng đặt đơn hàng mới
+            try {
+                require_once __DIR__ . '/../services/RealtimeService.php';
+                RealtimeService::publish(
+                    'order_created',
+                    'all',
+                    'order',
+                    $orderId,
+                    'create',
+                    '⚡ Đơn hàng mới!',
+                    "Khách hàng {$orderData['customer_name']} vừa đặt đơn #{$orderCode} (" . number_format($finalAmount, 0, ',', '.') . "đ).",
+                    [
+                        'order_id' => $orderId,
+                        'order_code' => $orderCode,
+                        'customer_name' => $orderData['customer_name'],
+                        'final_amount' => $finalAmount,
+                        'user_id' => $userId,
+                        'affected_products' => array_column($verifiedItems, 'id')
+                    ],
+                    $userId
+                );
+            } catch (Throwable $e) {}
+
             return $orderCode;
         } catch (Exception $e) {
             if ($this->db->inTransaction()) {
@@ -688,6 +712,27 @@ class Order extends BaseModel {
                 $couponModel = new Coupon();
                 $couponModel->decreaseUsed($couponCode);
             }
+
+            // Phát sự kiện Real-time: Hủy đơn hàng
+            try {
+                require_once __DIR__ . '/../services/RealtimeService.php';
+                RealtimeService::publish(
+                    'order_cancelled',
+                    'all',
+                    'order',
+                    $orderId,
+                    'cancel',
+                    'Đơn hàng đã hủy',
+                    "Đơn hàng #{$order['order_code']} vừa bị hủy.",
+                    [
+                        'order_id' => $orderId,
+                        'order_code' => $order['order_code'],
+                        'reason' => $reason,
+                        'user_id' => $order['user_id'] ?? null
+                    ],
+                    !empty($order['user_id']) ? (int)$order['user_id'] : null
+                );
+            } catch (Throwable $e) {}
         }
 
         return $res;
@@ -757,6 +802,41 @@ class Order extends BaseModel {
         // Admin DUYỆT trả hàng hoặc HỦY ĐƠN: hoàn lại lượt dùng mã giảm giá (Idempotent 100%)
         if ($ok && in_array($status, ['returned', 'cancelled'], true) && !in_array($curOrder['order_status'], ['returned', 'cancelled'], true)) {
             $this->releaseCoupon($curOrder);
+        }
+
+        if ($ok) {
+            // Phát sự kiện Real-time: Đơn hàng thay đổi trạng thái
+            try {
+                require_once __DIR__ . '/../services/RealtimeService.php';
+                $statusLabels = [
+                    'pending' => 'Chờ duyệt',
+                    'confirmed' => 'Đã xác nhận',
+                    'shipping' => 'Đang giao hàng',
+                    'completed' => 'Giao thành công',
+                    'return_requested' => 'Yêu cầu trả hàng',
+                    'returned' => 'Đã trả hàng',
+                    'cancelled' => 'Đã hủy'
+                ];
+                $stName = $statusLabels[$status] ?? $status;
+                RealtimeService::publish(
+                    'order_status_updated',
+                    'all',
+                    'order',
+                    $id,
+                    'status_change',
+                    'Cập nhật đơn hàng #' . ($curOrder['order_code'] ?? $id),
+                    "Đơn hàng #{$curOrder['order_code']} đã chuyển sang trạng thái: {$stName}.",
+                    [
+                        'order_id' => $id,
+                        'order_code' => $curOrder['order_code'] ?? '',
+                        'old_status' => $curOrder['order_status'],
+                        'new_status' => $status,
+                        'payment_status' => $paymentStatus ?? $curOrder['payment_status'],
+                        'user_id' => $curOrder['user_id'] ?? null
+                    ],
+                    !empty($curOrder['user_id']) ? (int)$curOrder['user_id'] : null
+                );
+            } catch (Throwable $e) {}
         }
 
         return $ok;

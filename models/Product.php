@@ -343,6 +343,21 @@ class Product extends BaseModel
         // Tự động đồng bộ sang 3 bảng quan hệ: Thuộc tính (attributes), Album (galleries), Màu sắc (colors)
         $this->autoSyncRelationalTables($newId, $data);
 
+        // Phát sự kiện Real-time
+        try {
+            require_once __DIR__ . '/../services/RealtimeService.php';
+            RealtimeService::publish(
+                'product_created',
+                'all',
+                'product',
+                $newId,
+                'create',
+                'Sản phẩm mới',
+                "Sản phẩm '{$data['name']}' vừa được thêm vào cửa hàng.",
+                ['product_id' => $newId, 'name' => $data['name'], 'price' => $price, 'quantity' => $quantity]
+            );
+        } catch (Throwable $e) {}
+
         return $newId;
     }
 
@@ -381,6 +396,21 @@ class Product extends BaseModel
 
         if ($res) {
             $this->autoSyncRelationalTables($id, $data);
+
+            // Phát sự kiện Real-time
+            try {
+                require_once __DIR__ . '/../services/RealtimeService.php';
+                RealtimeService::publish(
+                    'product_updated',
+                    'all',
+                    'product',
+                    $id,
+                    'update',
+                    'Cập nhật sản phẩm',
+                    "Sản phẩm '{$data['name']}' vừa được cập nhật thông tin.",
+                    ['product_id' => $id, 'name' => $data['name'], 'price' => $price, 'quantity' => $quantity]
+                );
+            } catch (Throwable $e) {}
         }
 
         return $res;
@@ -530,7 +560,23 @@ class Product extends BaseModel
     public function delete(int $id): bool
     {
         $stmt = $this->db->prepare("UPDATE products SET deleted_at = NOW() WHERE id = ?");
-        return $stmt->execute([$id]);
+        $res = $stmt->execute([$id]);
+        if ($res) {
+            try {
+                require_once __DIR__ . '/../services/RealtimeService.php';
+                RealtimeService::publish(
+                    'product_deleted',
+                    'all',
+                    'product',
+                    $id,
+                    'delete',
+                    'Sản phẩm ngừng kinh doanh',
+                    "Một sản phẩm vừa được chuyển vào thùng rác.",
+                    ['product_id' => $id]
+                );
+            } catch (Throwable $e) {}
+        }
+        return $res;
     }
 
     /**
@@ -539,7 +585,23 @@ class Product extends BaseModel
     public function restore(int $id): bool
     {
         $stmt = $this->db->prepare("UPDATE products SET deleted_at = NULL WHERE id = ?");
-        return $stmt->execute([$id]);
+        $res = $stmt->execute([$id]);
+        if ($res) {
+            try {
+                require_once __DIR__ . '/../services/RealtimeService.php';
+                RealtimeService::publish(
+                    'product_restored',
+                    'all',
+                    'product',
+                    $id,
+                    'restore',
+                    'Khôi phục sản phẩm',
+                    "Một sản phẩm vừa được khôi phục kinh doanh.",
+                    ['product_id' => $id]
+                );
+            } catch (Throwable $e) {}
+        }
+        return $res;
     }
 
     /**

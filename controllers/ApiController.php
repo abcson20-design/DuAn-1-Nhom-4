@@ -56,6 +56,9 @@ class ApiController extends BaseController
                 case 'product':
                     $this->handleProducts($action);
                     break;
+                case 'realtime':
+                    $this->handleRealtime($action);
+                    break;
                 default:
                     $this->json(['success' => false, 'message' => 'API endpoint không tồn tại'], 404);
             }
@@ -1282,6 +1285,60 @@ class ApiController extends BaseController
             'quantity' => (int)($product['quantity'] ?? 0),
             'price' => (float)($product['price'] ?? 0),
             'colors' => $colors
+        ]);
+    }
+
+    // =========================================================================
+    // 7. REAL-TIME EVENT STREAM / POLLING API
+    // =========================================================================
+
+    private function handleRealtime(string $action): void
+    {
+        require_once __DIR__ . '/../services/RealtimeService.php';
+
+        switch ($action) {
+            case 'poll':
+            case 'events':
+                $this->realtimePoll();
+                break;
+            case 'init':
+                $latestId = RealtimeService::getLatestEventId();
+                $this->json([
+                    'success' => true,
+                    'latest_event_id' => $latestId,
+                    'server_time' => time()
+                ]);
+                break;
+            default:
+                $this->json(['success' => false, 'message' => 'Action realtime không tồn tại'], 404);
+        }
+    }
+
+    private function realtimePoll(): void
+    {
+        $lastId = (int)($_GET['last_id'] ?? 0);
+        $scope = trim($_GET['scope'] ?? 'client');
+        if (!in_array($scope, ['client', 'admin'], true)) {
+            $scope = 'client';
+        }
+
+        // Nếu là admin scope, kiểm tra quyền admin
+        if ($scope === 'admin') {
+            $adminUser = $_SESSION['admin_user'] ?? null;
+            if (!$adminUser) {
+                $scope = 'client';
+            }
+        }
+
+        $events = RealtimeService::getEventsSince($lastId, $scope, 50);
+        $latestId = !empty($events) ? (int)end($events)['id'] : $lastId;
+
+        $this->json([
+            'success' => true,
+            'has_events' => !empty($events),
+            'events' => $events,
+            'latest_event_id' => $latestId,
+            'server_time' => time()
         ]);
     }
 }
