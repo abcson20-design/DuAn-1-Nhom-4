@@ -29,8 +29,6 @@ Website thương mại điện tử chuyên nghiệp, xây dựng theo kiến tr
 3. **Giao diện Frontend:** Tailwind CSS, Font Awesome 6.5, Google Fonts (Inter), SweetAlert2, hiệu ứng Cyberpunk Neon Glow.
 4. **Thanh toán Trực tuyến & Webhook Tự Động (Online Payment):**
    - **Cổng thanh toán SePay:** Webhook IPN tự động khớp mã đơn hàng và số tiền thực tế, cập nhật trạng thái thanh toán theo thời gian thực (Real-time). Tiếp nhận xử lý overpayment (chuyển thừa tiền) tự động ghi nhận hoá đơn và lưu vết số tiền chênh lệch.
-   - **VietQR Napas 247:** Tạo mã QR động chuẩn Napas kèm số tiền và nội dung chuyển khoản tự động.
-   - **Chuyển khoản thủ công:** Hỗ trợ nhập mã giao dịch xác nhận.
    - **Ship COD:** Thanh toán tiền mặt khi nhận hàng với quy trình máy trạng thái giao nhận 1 chiều nghiêm ngặt.
 5. **Cơ chế Real-time SSE (Server-Sent Events) theo Mili-giây:**
    - Kênh SSE tại `index.php?url=api/orders/sse` đẩy thông báo trạng thái đơn hàng tức thì giữa màn hình Admin và Client mà không cần F5 lại trang.
