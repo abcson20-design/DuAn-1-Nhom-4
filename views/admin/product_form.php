@@ -192,8 +192,25 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Số lượng kho</label>
-                        <input type="number" name="quantity" value="<?= htmlspecialchars($product['quantity'] ?? '') ?>" placeholder="VD: 50" class="w-full text-xs p-3 rounded-xl border border-slate-700 bg-slate-950 text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-semibold text-slate-300">Số lượng kho (Tổng sản phẩm)</label>
+                            <span id="variantSumBadge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-800/60">
+                                <i class="fa-solid fa-link text-[9px] mr-0.5"></i> Đồng bộ biến thể
+                            </span>
+                        </div>
+                        <div class="relative">
+                            <input type="number" 
+                                   id="productQuantityInput" 
+                                   name="quantity" 
+                                   min="0"
+                                   value="<?= htmlspecialchars($product['quantity'] ?? '') ?>" 
+                                   placeholder="VD: 50" 
+                                   class="w-full text-xs p-3 rounded-xl border border-slate-700 bg-slate-950 text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400">
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 pointer-events-none">chiếc</span>
+                        </div>
+                        <div id="stockSyncMessage" class="mt-1.5 text-[11px] flex items-center gap-1.5 hidden">
+                            <!-- Hiển thị trạng thái tự động khớp tổng số lượng -->
+                        </div>
                     </div>
 
                     <!-- MỤC QUẢN LÝ TRÌNH CHIẾU TRANG CHI TIẾT (CHỌN 1 TRONG 2: SLIDESHOW HOẶC VIDEO) -->
@@ -395,9 +412,14 @@
                                 <p class="text-[11px] text-slate-400 mt-0.5">
                                     Cài đặt từng màu sắc kèm hình ảnh (tải ảnh từ máy hoặc dán link). Ở trang chi tiết, ảnh màu sẽ nằm ở TRÊN dòng chữ tên màu.
                                 </p>
-                                <span class="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-semibold mt-1">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Ảnh màu tải lên từ máy tự động tách nền trong suốt
-                                </span>
+                                <div class="flex flex-wrap items-center gap-2 mt-1">
+                                    <span class="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-semibold">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> Ảnh màu tải lên từ máy tự động tách nền trong suốt
+                                    </span>
+                                    <span id="variantStockSummary" class="hidden inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-slate-300">
+                                        <i class="fa-solid fa-boxes-stacked text-cyan-400"></i> Tổng các biến thể màu: <b id="variantStockTotalNum" class="text-cyan-300 ml-0.5">0</b> chiếc
+                                    </span>
+                                </div>
                             </div>
                             <div class="flex flex-wrap items-center gap-2">
                                 <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold border border-slate-700 transition flex items-center gap-1.5 shadow-sm" title="Tải nhiều file ảnh màu cùng lúc từ máy">
@@ -471,7 +493,7 @@
                                                        value="<?= htmlspecialchars(isset($colorItem['quantity']) ? (int)$colorItem['quantity'] : '') ?>" 
                                                        placeholder="VD: 50" 
                                                        required 
-                                                       class="w-full text-xs py-1.5 px-2.5 rounded-xl border border-slate-700 bg-slate-950 text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400">
+                                                       class="color-qty-input w-full text-xs py-1.5 px-2.5 rounded-xl border border-slate-700 bg-slate-950 text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400">
                                                 <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 pointer-events-none">chiếc</span>
                                             </div>
                                         </div>
@@ -1122,6 +1144,83 @@
                 label.innerHTML = `<i class="fa-solid fa-palette text-indigo-400 text-xs"></i> Màu #${idx + 1}`;
             }
         });
+        syncProductStockWithVariants('row-change');
+    }
+
+    // ==========================================
+    // TỰ ĐỘNG ĐỒNG BỘ & KIỂM TRA SỐ LƯỢNG KHO (TỔNG KHO VÀ TỔNG CÁC BIẾN THỂ)
+    // ==========================================
+    function getVariantStockSum() {
+        const qtyInputs = document.querySelectorAll('#colorsContainer .color-qty-input');
+        let sum = 0;
+        let count = 0;
+        qtyInputs.forEach(input => {
+            const val = parseInt(input.value);
+            if (!isNaN(val) && val >= 0) {
+                sum += val;
+                count++;
+            }
+        });
+        return { sum: sum, count: qtyInputs.length };
+    }
+
+    function syncProductStockWithVariants(triggerSource = 'variant') {
+        const totalInput = document.getElementById('productQuantityInput');
+        const variantSummary = document.getElementById('variantStockSummary');
+        const variantTotalNum = document.getElementById('variantStockTotalNum');
+        const syncBadge = document.getElementById('variantSumBadge');
+        const syncMsg = document.getElementById('stockSyncMessage');
+
+        if (!totalInput) return;
+
+        const { sum, count } = getVariantStockSum();
+
+        if (count > 0) {
+            if (variantSummary) {
+                variantSummary.classList.remove('hidden');
+                if (variantTotalNum) variantTotalNum.textContent = sum;
+            }
+            if (syncBadge) {
+                syncBadge.classList.remove('hidden');
+            }
+
+            if (triggerSource === 'variant' || triggerSource === 'row-change' || triggerSource === 'force-sync') {
+                totalInput.value = sum;
+            }
+
+            const currentTotal = parseInt(totalInput.value);
+            if (isNaN(currentTotal) || currentTotal !== sum) {
+                if (syncMsg) {
+                    syncMsg.classList.remove('hidden');
+                    syncMsg.className = 'mt-1.5 text-[11px] flex items-center justify-between p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300';
+                    syncMsg.innerHTML = `
+                        <div class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+                            <span>Chưa khớp: Tổng (${isNaN(currentTotal) ? 0 : currentTotal}) ≠ Tổng biến thể (${sum})</span>
+                        </div>
+                        <button type="button" onclick="syncProductStockWithVariants('force-sync')" class="px-2 py-0.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-[10px] font-bold border border-amber-500/40 transition">
+                            Tự động khớp (${sum})
+                        </button>
+                    `;
+                }
+            } else {
+                if (syncMsg) {
+                    syncMsg.classList.remove('hidden');
+                    syncMsg.className = 'mt-1.5 text-[11px] flex items-center gap-1.5 p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300';
+                    syncMsg.innerHTML = `
+                        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                        <span>Đã tự động xác nhận khớp: Tổng kho (${currentTotal}) = Tổng các biến thể (${sum})</span>
+                    `;
+                }
+            }
+        } else {
+            if (variantSummary) variantSummary.classList.add('hidden');
+            if (syncBadge) syncBadge.classList.add('hidden');
+            if (syncMsg) {
+                syncMsg.classList.add('hidden');
+                syncMsg.innerHTML = '';
+            }
+        }
     }
 
     function previewColorFile(input) {
@@ -1243,7 +1342,7 @@
                            value="${quantity}" 
                            placeholder="Số lượng kho" 
                            required 
-                           class="w-full text-xs py-1.5 px-2.5 rounded-xl border border-slate-700 bg-slate-950 text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400">
+                           class="color-qty-input w-full text-xs py-1.5 px-2.5 rounded-xl border border-slate-700 bg-slate-950 text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400">
                     <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 pointer-events-none">chiếc</span>
                 </div>
             </div>
@@ -1533,6 +1632,40 @@
                     fillSampleSpecs('headphone');
                 }
             }
+        }
+
+        // Lắng nghe sự kiện thay đổi số lượng ở biến thể và tổng kho
+        const totalInput = document.getElementById('productQuantityInput');
+        if (totalInput) {
+            totalInput.addEventListener('input', function() {
+                syncProductStockWithVariants('total');
+            });
+        }
+
+        const colorsContainer = document.getElementById('colorsContainer');
+        if (colorsContainer) {
+            colorsContainer.addEventListener('input', function(e) {
+                if (e.target && e.target.classList.contains('color-qty-input')) {
+                    syncProductStockWithVariants('variant');
+                }
+            });
+        }
+
+        // Tự động kiểm tra và đồng bộ ban đầu
+        const { count } = getVariantStockSum();
+        if (count > 0) {
+            syncProductStockWithVariants('init');
+        }
+
+        // Đảm bảo khi Submit Form: Nếu có biến thể, tổng kho luôn bằng tổng các biến thể
+        const productForm = document.querySelector('form');
+        if (productForm) {
+            productForm.addEventListener('submit', function() {
+                const { sum, count } = getVariantStockSum();
+                if (count > 0 && totalInput) {
+                    totalInput.value = sum;
+                }
+            });
         }
     });
     </script>

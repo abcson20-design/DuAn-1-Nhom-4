@@ -687,6 +687,9 @@ class AdminController extends BaseController {
                 }
             }
 
+            // Tự động kiểm tra và xác nhận số lượng tổng sản phẩm và số lượng tổng biến thể bằng nhau
+            $finalQuantity = !empty($colorsData) ? (int)array_sum(array_column($colorsData, 'quantity')) : max(0, (int)($_POST['quantity'] ?? 50));
+
             $data = [
                 'category_id' => (int)$_POST['category_id'],
                 'brand_id' => (int)$_POST['brand_id'],
@@ -699,7 +702,7 @@ class AdminController extends BaseController {
                 'video' => !empty($videoUrl) ? $videoUrl : null,
                 'colors' => $colorsJson,
                 'media_type' => $mediaType,
-                'quantity' => (int)($_POST['quantity'] ?? 50),
+                'quantity' => $finalQuantity,
                 'compatible_device' => trim($_POST['compatible_device'] ?? 'Chính hãng'),
                 'description' => trim($_POST['description'] ?? ''),
                 'specs' => $specsJson,
@@ -932,6 +935,9 @@ class AdminController extends BaseController {
                 }
             }
 
+            // Tự động kiểm tra và xác nhận số lượng tổng sản phẩm và số lượng tổng biến thể bằng nhau
+            $finalQuantity = !empty($colorsData) ? (int)array_sum(array_column($colorsData, 'quantity')) : max(0, (int)($_POST['quantity'] ?? 50));
+
             $data = [
                 'category_id' => (int)$_POST['category_id'],
                 'brand_id' => (int)$_POST['brand_id'],
@@ -944,7 +950,7 @@ class AdminController extends BaseController {
                 'video' => !empty($videoUrl) ? $videoUrl : null,
                 'colors' => $colorsJson,
                 'media_type' => $mediaType,
-                'quantity' => (int)($_POST['quantity'] ?? 50),
+                'quantity' => $finalQuantity,
                 'compatible_device' => trim($_POST['compatible_device'] ?? 'Chính hãng'),
                 'description' => trim($_POST['description'] ?? ''),
                 'specs' => $specsJson,
