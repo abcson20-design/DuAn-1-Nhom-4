@@ -1,4 +1,8 @@
 <?php
+/**
+ * MODEL USER & PHÂN QUYỀN KHÁCH HÀNG / ADMIN
+ * Thành viên phụ trách: Lê Văn Sơn (Trưởng nhóm)
+ */
 require_once __DIR__ . '/BaseModel.php';
 
 class User extends BaseModel {
