@@ -1,6 +1,6 @@
 # DỰ ÁN 1: HỆ THỐNG THƯƠNG MẠI ĐIỆN TỬ BÁN ĐIỆN THOẠI & PHỤ KIỆN (NEXVORA)
 
-Website thương mại điện tử chuyên nghiệp, xây dựng theo kiến trúc **Mô hình MVC (Model - View - Controller)** bằng **PHP thuần**, giao diện hiện đại phong cách **Dark Cyberpunk** tối ưu bằng **Tailwind CSS**, tích hợp **Cổng thanh toán tự động SePay Webhook**, **Quét mã VietQR 24/7**, **SSE Real-time Events (Độ trễ mili-giây)**, và hệ thống quản trị chuyên sâu.
+Website thương mại điện tử chuyên nghiệp, xây dựng theo kiến trúc **Mô hình MVC (Model - View - Controller)** bằng **PHP thuần**, giao diện hiện đại phong cách **Dark Cyberpunk** tối ưu bằng **Tailwind CSS**, tích hợp **Cổng thanh toán tự động SePay Webhook**, **Ship COD**, **SSE Real-time Events (Độ trễ mili-giây)**, và hệ thống quản trị chuyên sâu.
 
 ---
 
@@ -18,7 +18,7 @@ Website thương mại điện tử chuyên nghiệp, xây dựng theo kiến tr
    - `product_reviews`: Đánh giá, chấm sao và bình luận của khách hàng
    - `orders`: Đơn hàng (Mã đơn, thông tin nhận hàng, trạng thái, tổng tiền)
    - `order_items`: Chi tiết từng mặt hàng trong đơn (Snapshot giá, số lượng, màu sắc độc lập)
-   - `payments`: Lịch sử giao dịch và đối soát thanh toán (SePay Webhook, VietQR, COD)
+   - `payments`: Lịch sử giao dịch và đối soát thanh toán (SePay Webhook, COD)
    - `warranties`: Quản lý bảo hành điện tử theo số IMEI / Serial sản phẩm
    - `contacts`: Hộp thư liên hệ & yêu cầu hỗ trợ khách hàng
    - `coupons`: Hệ thống mã giảm giá & voucher khuyến mại
