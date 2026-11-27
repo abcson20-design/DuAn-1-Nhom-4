@@ -172,7 +172,7 @@ class AdminController extends BaseController {
         $brandId = !empty($_GET['brand_id']) ? (int)$_GET['brand_id'] : null;
         $type = $_GET['type'] ?? 'all'; // 'all', 'phone', 'accessory'
 
-        $filters = [];
+        $filters = ['include_out_of_stock' => true];
         if ($keyword !== '') {
             $filters['keyword'] = $keyword;
         }
@@ -191,9 +191,9 @@ class AdminController extends BaseController {
         $products = $productModel->searchAndFilter($filters, 200);
 
         // Đếm số lượng theo từng phân hệ để gắn huy hiệu số lượng trên các Tab
-        $countAll = $productModel->countSearchAndFilter([]);
-        $countPhones = $productModel->countSearchAndFilter(['category_type' => 'phone']);
-        $countAccessories = $productModel->countSearchAndFilter(['category_type' => 'accessory']);
+        $countAll = $productModel->countSearchAndFilter(['include_out_of_stock' => true]);
+        $countPhones = $productModel->countSearchAndFilter(['category_type' => 'phone', 'include_out_of_stock' => true]);
+        $countAccessories = $productModel->countSearchAndFilter(['category_type' => 'accessory', 'include_out_of_stock' => true]);
         $countTrash = count($productModel->getTrash());
 
         require_once __DIR__ . '/../views/admin/products.php';
@@ -990,9 +990,9 @@ class AdminController extends BaseController {
         $productModel = new Product();
         $trashProducts = $productModel->getTrash();
 
-        $countAll = $productModel->countSearchAndFilter([]);
-        $countPhones = $productModel->countSearchAndFilter(['category_type' => 'phone']);
-        $countAccessories = $productModel->countSearchAndFilter(['category_type' => 'accessory']);
+        $countAll = $productModel->countSearchAndFilter(['include_out_of_stock' => true]);
+        $countPhones = $productModel->countSearchAndFilter(['category_type' => 'phone', 'include_out_of_stock' => true]);
+        $countAccessories = $productModel->countSearchAndFilter(['category_type' => 'accessory', 'include_out_of_stock' => true]);
         $countTrash = count($trashProducts);
 
         require_once __DIR__ . '/../views/admin/products_trash.php';
@@ -1440,7 +1440,7 @@ class AdminController extends BaseController {
         $error = null;
 
         $categories = $categoryModel->getAll();
-        $products = $productModel->searchAndFilter([], 500);
+        $products = $productModel->searchAndFilter(['include_out_of_stock' => true], 500);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->requireCsrf();
@@ -1516,7 +1516,7 @@ class AdminController extends BaseController {
         }
 
         $categories = $categoryModel->getAll();
-        $products = $productModel->searchAndFilter([], 500);
+        $products = $productModel->searchAndFilter(['include_out_of_stock' => true], 500);
         $error = null;
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
